@@ -7,30 +7,30 @@ export default function SignupForm() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [formData, setFormData] = useState({
+    username: "",
+    email: "",
+    phone: "",
+    password: ""
+  });
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setMessage(null);
 
-    const form = e.target as HTMLFormElement;
-    const formData = new FormData(form);
-
-    const username = formData.get("username") as string;
-    const email = formData.get("email") as string;
-    const phone = formData.get("phone") as string;
-    const password = formData.get("password") as string;
-
     try {
       const res = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          username,
-          email,
-          phone,
-          password,
-        }),
+        body: JSON.stringify(formData),
       });
 
       const data = await res.json();
@@ -41,7 +41,7 @@ export default function SignupForm() {
       }
 
       setMessage("Account created! Redirecting...");
-      form.reset();
+      setFormData({ username: "", email: "", phone: "", password: "" });
 
       setTimeout(() => {
         router.push("/login");
@@ -54,49 +54,102 @@ export default function SignupForm() {
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="max-w-md mx-auto flex flex-col gap-4 p-4 border rounded-lg"
-    >
-      <h2 className="text-2xl font-semibold text-center">Create Account</h2>
+    <div className="min-h-screen bg-slate-900 flex items-center justify-center page-paddings">
+      <div className="w-full max-w-xl">
+        <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-8 space-y-6 shadow-xl">
+          <div className="text-center space-y-2">
+            <h2 className="text-3xl font-bold text-slate-100">Create Account</h2>
+            <p className="text-slate-400">Join Talkini and start chatting</p>
+          </div>
 
-      <input
-        name="username"
-        placeholder="Username"
-        className="p-2 border rounded"
-        required
-      />
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">
+                Username
+              </label>
+              <input
+                name="username"
+                value={formData.username}
+                onChange={handleChange}
+                placeholder="Choose a username"
+                className="input"
+                required
+              />
+            </div>
 
-      <input
-        type="email"
-        name="email"
-        placeholder="Email"
-        className="p-2 border rounded"
-        required
-      />
-      <input
-        name="phone"
-        placeholder="Phone Number"
-        className="p-2 border rounded"
-        required
-      />
-      <input
-        type="password"
-        name="password"
-        placeholder="Password"
-        className="p-2 border rounded"
-        required
-      />
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">
+                Email
+              </label>
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="your@email.com"
+                className="input"
+                required
+              />
+            </div>
 
-      {message && <p className="text-center text-sm text-red-500">{message}</p>}
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">
+                Phone Number
+              </label>
+              <input
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                placeholder="+1 (555) 000-0000"
+                className="input"
+                required
+              />
+            </div>
 
-      <button
-        type="submit"
-        disabled={loading}
-        className="bg-black text-white p-2 rounded hover:bg-gray-800"
-      >
-        {loading ? "Creating account..." : "Sign Up"}
-      </button>
-    </form>
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">
+                Password
+              </label>
+              <input
+                type="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="Create a strong password"
+                className="input"
+                required
+              />
+            </div>
+          </div>
+
+          {message && (
+            <div className={`text-center text-sm p-3 rounded-lg ${
+              message.includes("created") 
+                ? "bg-green-600/20 text-green-400 border border-green-600/30" 
+                : "bg-red-600/20 text-red-400 border border-red-600/30"
+            }`}>
+              {message}
+            </div>
+          )}
+
+          <button
+            onClick={handleSubmit}
+            disabled={loading}
+            className="btn w-full shadow-lg shadow-blue-600/20 py-3 text-base"
+          >
+            {loading ? "Creating account..." : "Sign Up"}
+          </button>
+
+          <div className="text-center">
+            <p className="text-sm text-slate-400">
+              Already have an account?{" "}
+              <a href="/login" className="text-blue-500 hover:text-blue-400 font-medium">
+                Log in
+              </a>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

@@ -22,11 +22,11 @@ export async function GET(req: NextRequest) {
     // Return only necessary fields (secure and clean)
     const userData = {
       _id: user._id,
-      firstName: user.firstName,
-      lastName: user.lastName,
+      username: user.username,
       email: user.email,
       phone: user.phone,
       role: user.role,
+      friends: user.friends
     };
 
     return NextResponse.json({ user: userData }, { status: 200 });

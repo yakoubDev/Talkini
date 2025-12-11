@@ -2,30 +2,36 @@
 
 import { useUser } from "@/store/authStore";
 import { User } from "@/types";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
 const AddFriend = () => {
+  const router = useRouter(); 
   const [search, setSearch] = useState("");
   const [foundUsers, setFoundUsers] = useState<User[] | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const user = useUser();
 
   const handleSearch = async () => {
     if (!search.trim()) return;
 
+    setLoading(true);
     try {
       const response = await fetch(`/api/users?search=${search}`);
       const result = await response.json();
 
       if (!response.ok) {
-        console.log(result.message || "Something went wrong");
+        toast.error(result.message || "Something went wrong");
         return;
       }
 
       setFoundUsers(result.users);
     } catch (err) {
-      console.log(err);
+      toast.error("Failed to search users");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -46,54 +52,103 @@ const AddFriend = () => {
         return;
       }
 
-      toast.success("Friend Request Sent !");
+      toast.success("Friend Request Sent!");
     } catch (error) {
-      console.log(error);
       toast.error("Something went wrong...");
     }
   };
 
-  return (
-    <div className="h-screen w-full p-4 flex justify-center">
-      <div className="min-w-8xl p-4">
-        <h1 className="font-bold text-2xl">Add Friend</h1>
-        <p>You can add friends by username</p>
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleSearch();
+    }
+  };
 
-        {/* Search bar */}
-        <div className="flex items-center gap-2 mt-3">
-          <input
-            placeholder="Search usernames"
-            className="bg-slate-900 text-white px-2 py-1 rounded focus:outline-none"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-          <button onClick={handleSearch} className="btn">
-            Search
-          </button>
+  return (
+    <div className="min-h-screen bg-slate-900 page-paddings">
+      <div className="max-w-3xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-slate-100">Add Friend</h1>
+          <p className="text-slate-400 mt-1">
+            Search and connect with people on Talkini
+          </p>
+        </div>
+
+        {/* Search Bar */}
+        <div className="bg-slate-800 border border-slate-700 rounded-xl p-6 mb-6">
+          <label className="block text-sm font-medium text-slate-300 mb-3">
+            Search by username
+          </label>
+          <div className="flex gap-3">
+            <input
+              placeholder="Enter username..."
+              className="input flex-1"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onKeyPress={handleKeyPress}
+            />
+            <button
+              onClick={handleSearch}
+              disabled={loading || !search.trim()}
+              className="btn"
+            >
+              {loading ? "Searching..." : "Search"}
+            </button>
+          </div>
         </div>
 
         {/* Results */}
-        <div className="mt-6 space-y-3">
+        <div className="space-y-3">
           {foundUsers !== null && foundUsers.length === 0 && (
-            <p>No users found.</p>
+            <div className="bg-slate-800 border border-slate-700 rounded-xl p-12 text-center">
+              <div className="text-5xl mb-4">🔍</div>
+              <h3 className="text-xl font-semibold text-slate-100 mb-2">
+                No users found
+              </h3>
+              <p className="text-slate-400">
+                Try searching with a different username
+              </p>
+            </div>
           )}
 
-          {foundUsers &&
-            foundUsers.map((u) => (
-              <div
-                key={u._id}
-                className="p-2 bg-slate-800 rounded text-white flex items-center justify-between"
-              >
-                <p>{u.username}</p>
-
-                <button
-                  onClick={() => sendFriendRequest(u._id)}
-                  className="btn"
+          {foundUsers && foundUsers.length > 0 && (
+            <div>
+              <p className="text-sm text-slate-400 mb-3">
+                Found {foundUsers.length}{" "}
+                {foundUsers.length === 1 ? "user" : "users"}
+              </p>
+              {foundUsers.map((u) => (
+                <div
+                  key={u._id}
+                  className="bg-slate-800 border border-slate-700 rounded-xl p-4 mb-3 flex items-center justify-between hover:border-slate-600 transition-all"
                 >
-                  Add Friend
-                </button>
-              </div>
-            ))}
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-linear-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                      {u.username[0].toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="font-semibold text-slate-100 text-lg">
+                        {u.username}
+                      </p>
+                      <p className="text-sm text-slate-400">{u.email}</p>
+                    </div>
+                  </div>
+
+                  {user?.friends?.includes(u._id) ? (
+                    <button onClick={() => router.push(`/chat/${u._id}`)} className="btn">Message</button>
+                  ) : (
+                    <button
+                      onClick={() => sendFriendRequest(u._id)}
+                      className="btn"
+                    >
+                      Add Friend
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
